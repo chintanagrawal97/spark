@@ -1,0 +1,97 @@
+Sample Dataset
++----+-----+---+---------+
+|Year|Month|Day|    Value|
++----+-----+---+---------+
+|2015|    4|  5|        g|
+|2015|    1|  1|  fhwehfo|
+|2016|    3|  6|      wef|
+|2017|    2|  3|      fes|
+|2017|    4|  4|        e|
+|2017|    2|  3|       wf|
+|2016|    4|  2|      dgd|
+|2015|    3|  4|       ge|
+|2016|    1|  1|dfjwefwef|
++----+-----+---+---------+
+
+df=df.repartition(3)
++----+-----+---+---------+---+
+|Year|Month|Day|    Value|pid|
++----+-----+---+---------+---+
+|2015|    4|  5|        g|  0|
+|2015|    1|  1|  fhwehfo|  0|
+|2016|    3|  6|      wef|  0|
+|2017|    2|  3|      fes|  1|
+|2017|    4|  4|        e|  1|
+|2017|    2|  3|       wf|  1|
+|2016|    4|  2|      dgd|  2|
+|2015|    3|  4|       ge|  2|
+|2016|    1|  1|dfjwefwef|  2|
++----+-----+---+---------+---+
+
+As you can see above repartitioning through specifying a number randomly divides it into partitions.
+
+df.write.format("parquet").partitionBy('Year').save('s3://achintan-testing/AspireNext/repartiton/')
+
+I noticed that 5 files were generated in my s3 directory. 
+So here is what happens 
+Spark independently writes the partitions in s3 directory.
+So for partition 0 , it will partition based on Year (as specified in the write method) —> It will create two parquet files 1 for year 2016 and another for 2015
+|2015|    4|  5|        g|  0|
+|2015|    1|  1|  fhwehfo|  0|
+|2016|    3|  6|      wef|  0|
+
+For Partiton 1 —> Will generate 1 parquet file under Folder 2017
+|2017|    2|  3|      fes|  1|
+|2017|    4|  4|        e|  1|
+|2017|    2|  3|       wf|  1|
+
+For partiton 2 —> Will generate 2 files , 1 for year 2015 and 1 for 2016
+|2016|    4|  2|      dgd|  2|
+|2015|    3|  4|       ge|  2|
+|2016|    1|  1|dfjwefwef|  2|
++----+-----+---+---------+---+
+
+
+===================
+
+If I do repartitioning by Year
+df= df.repartition("Year")
++----+-----+---+---------+---+
+|Year|Month|Day|    Value|pid|
++----+-----+---+---------+---+
+|2016|    1|  1|dfjwefwef|  8|
+|2016|    4|  2|      dgd|  8|
+|2016|    3|  6|      wef|  8|
+|2017|    2|  3|       wf| 26|
+|2017|    4|  4|        e| 26|
+|2017|    2|  3|      fes| 26|
+|2015|    1|  1|  fhwehfo|160|
+|2015|    4|  5|        g|160|
+|2015|    3|  4|       ge|160|
++----+-----+---+---------+---+
+
+So when you write this data frame to your S3 , it would create 3 parquet files in total. As each partition had the same keys while writing the data you would create only 1 parquet file for each s3 partiton.
+
+=========
+
+Now if I repartition by 2 columns 
+df = df.repartition("Year","Month")
++----+-----+---+---------+---+
+|Year|Month|Day|    Value|pid|
++----+-----+---+---------+---+
+|2017|    4|  4|        e| 18|
+|2015|    4|  5|        g| 59|
+|2015|    1|  1|  fhwehfo| 63|
+|2015|    3|  4|       ge|100|
+|2016|    3|  6|      wef|127|
+|2017|    2|  3|       wf|145|
+|2017|    2|  3|      fes|145|
+|2016|    1|  1|dfjwefwef|170|
+|2016|    4|  2|      dgd|183|
+
+Notice that only two records are in same partition (145)
+
+When I now write this file to s3 I get a total of 8 files.
+df.write.format("parquet").partitionBy('Year').save('s3://achintan-testing/AspireNext/repartiton_by_two_col/')
+
+Year =2015 had 3 files , Year =2016 had 3 files , year = 2017 had 2 files.
