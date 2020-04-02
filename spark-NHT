@@ -1,0 +1,93 @@
+Spark Presentation
+
+Complete Introduction - Why we moved to Spark in memory ? 
+
+Compared to MR , the code is pretty simple. 
+Easy to debug.
+MR code u will write Driver, Mapper , Reducer ,input/output Format , disk /o from HDFS is big 
+Gives u interactive analysis in scala & Python - functional programming . O/p your results 
+MR has a long development cycle , developers task is difficult 
+For eg in Machine Learining Job might take a lot of time for trainig and testing. 
+Define every problem in terms if mapper and reducer 
+
+
+Show the stack of the applicatios 
+
+
+RDD - distributed collection of records , unmodifiable , fault tolerant , can be reconstructed ussing the steps 
+RDD is collection of records, the obects could be python , scala , Java . U need proper serailizers to read these objects 
+Lazy Evaluation 
+Tranformation , Action , Jobs , Stages & Tasks 
+
+History of Spark SQL 
+RDD ->  Tungsten -->Dataset
+
+Diffrence b/w dataset and Dataframe (Dataset with type Row )
+
+Dataset not there in Python -  Dynamic Typing 
+
+Talk about Spark Context , Hive Context , SQL Context 
+
+Sampling Functions like take()
+
+When to use RDD , more control over data , when they don't fit into Spark SQL API . Always go for Spark SQL API. They have been developed to give u inherently better performance
+
+Dataset API 
+Static typing , High level abstraction , Ese f use API 
+Dataset[Row] - untyped JVM object where Row is a generic 
+
+DataFrame - makes more accessible to developers , simple sql like syntax 
+existing RDDs , Spark Data Source , Hive Table 
+DataSource API example - json , csv , orc , parquet , etc
+SQL Aggregation function on group by 
+Spark SQL - HIVE table directly  , no need to create temp table, They directly work. on dataframe. Give Demo !
+
+Spark REPL i.e is python & scala shell 
+
+Spark Architecture 
+1. Driver 	2. Cluster Manager (Mesos , YARN , Standalone ) 	3. Executor (JVM )
+
+shells is a driver - working with the cluster manager 
+
+session brings in modules, SparkContext , sqlContext 
+
+Kubernetes as RM for Hadoop 
+hivecontext() - Hive metastore , Hive configuration file
+sqlcontext() - gives u access to sql api i.e Dataset and Dataframe API 
+
+Why sparksession() came ?
+
+Deployment Mode - decides where the driver runs 
+
+Client vs cluster 
+Cluster Manager - can be YARN , Mesos , Standalone
+YARN & Mesos - cluster - driver runs on Application master 
+	-client - driver runs in the aplication , from where u did spark-submit then interacts with Applciation Master for scheduling tasks , executors. Client could be Master node of the Cluster . But this would eat up resoucreas as it needs to run RM 
+Cluster mode - All JARs related to the execution of your application need to be publicly available to all the workers.
+Client - Driver opens up dedicated Netty HTTP server & distributes the JAR files specified to all Worker nodes (This is advantageous because save time and effort in configuring JARs for all workers)
+
+Comparision
+Small Application - u would get logs on your terminal , fast debugging other wise u would need to look at the containers logs.
+Multiple Submission from same client - could build up excess pressure o your client machine . OOM Errors on client (In EMR failure of cluster as Master goes down)
+
+
+Spark Memory model 
+
+Worker 1 Gb mempory and 1 core for YARN & HAdoop daemons 
+OFF heap memory - Executor memory overhead max (384 , 0.1 * Executor Memory- JVM Heap
+	 300 Mb is memory reserved  
+	 Memory Faction 0.75 This means that 75% is available for Spark
+	 		Storgae Memory 50%
+	 		Executor Memory 50%
+
+	 25 % User memory 
+
+RDD caching it will utilise the storage memory 
+
+Advantages of Dyamic Allocation & Possible problems 
+
+Walkthrough of memory allotment using a concrete example . Executor memory , overhead memory (off heap memory) , executor core (Not CPU cores , oversubscribe by * 2 )  , task depends on cores  , stress on each task works on single partiton.
+
+SQL Optimiser - Catalyst Optimiser - Tungsten Project 
+Set of rules that comes up with execution plans  
+https://jaceklaskowski.gitbooks.io/mastering-spark-sql/spark-sql-Optimizer.html
